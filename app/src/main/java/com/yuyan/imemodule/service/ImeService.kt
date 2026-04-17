@@ -64,7 +64,10 @@ class ImeService : InputMethodService() {
     private var debugContextInfo: String = ""
 
     private var lastDisplayState: EnvironmentSingleton.DisplayState? = null
-    
+
+    /** 副屏 [InputView] 构造时会抢占 [KeyboardManager]；仅在从副屏回到主屏时做一次 [rebindPrimaryKeyboardManager]，避免每次 [onStartInputView] 都 clear+重绑导致上屏/Rime 状态被清空。 */
+    private var keyboardManagerBoundToSecondary = false
+
     // 权限请求结果广播接收器
     private val permissionResultReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -339,6 +342,9 @@ class ImeService : InputMethodService() {
         } else {
             false
         }
+        if (shownOnSecondary) {
+            keyboardManagerBoundToSecondary = true
+        }
         if (shownOnSecondary && pinKeyboardOnSecondary && !heuristicFullscreen) {
             val dmSec = secondaryPresentation?.context?.resources?.displayMetrics
             if (dmSec != null) {
@@ -355,8 +361,10 @@ class ImeService : InputMethodService() {
         if (!shownOnSecondary) {
             if (!::mInputView.isInitialized) {
                 mInputView = InputView(baseContext, this)
-            } else {
+                keyboardManagerBoundToSecondary = false
+            } else if (keyboardManagerBoundToSecondary) {
                 rebindPrimaryKeyboardManager()
+                keyboardManagerBoundToSecondary = false
             }
             setInputView(mInputView)
             // Log.d(logTag, "setInputView normal with ${mInputView.javaClass.simpleName}") // 调试标签已隐藏
