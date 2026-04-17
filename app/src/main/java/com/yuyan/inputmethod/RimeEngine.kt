@@ -68,11 +68,11 @@ object RimeEngine {
         return if (Rime.hasRight()) {
             Rime.processKey(getRimeKeycodeByName("Page_Down"), 0)
            val candidates = Rime.getRimeContext()!!.candidates
-            if (InputModeSwitcherManager.isEnglishUpperCase) {
+            if (InputModeSwitcherManager.isEnglishUpperCase || InputModeSwitcherManager.isJapaneseUpperCase) {
                 for (item in candidates) {
                     item.text = item.text.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
                 }
-            } else if (InputModeSwitcherManager.isEnglishUpperLockCase) {
+            } else if (InputModeSwitcherManager.isEnglishUpperLockCase || InputModeSwitcherManager.isJapaneseUpperLockCase) {
                 for (item in candidates) {
                     item.text = item.text.uppercase()
                 }
@@ -157,10 +157,10 @@ object RimeEngine {
         if (rimeCommit != null) {
             keyRecordStack.clear()
             preCommitText = rimeCommit.commitText
-            if(Rime.getCurrentRimeSchema() == CustomConstant.SCHEMA_EN) {
-                preCommitText = if (InputModeSwitcherManager.isEnglishUpperCase) {
+            if(InputModeSwitcherManager.useLatinRimeCandidateCasing) {
+                preCommitText = if (InputModeSwitcherManager.isEnglishUpperCase || InputModeSwitcherManager.isJapaneseUpperCase) {
                     preCommitText.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-                } else if (InputModeSwitcherManager.isEnglishUpperLockCase) {
+                } else if (InputModeSwitcherManager.isEnglishUpperLockCase || InputModeSwitcherManager.isJapaneseUpperLockCase) {
                     preCommitText.uppercase()
                 } else {
                     preCommitText.lowercase()
@@ -176,7 +176,7 @@ object RimeEngine {
         showCandidates = when {
             compositionText.isNotBlank() -> {
                 val phrase = CustomEngine.processPhrase(compositionText.replace("\'", ""))
-                if(InputModeSwitcherManager.isEnglish && StringUtils.isLetter(compositionText) &&
+                if(InputModeSwitcherManager.useLatinRimeCandidateCasing && StringUtils.isLetter(compositionText) &&
                     !compositionText.equals(candidates.first().text, ignoreCase = true) ){
                     phrase.add(0, compositionText)
                 }
@@ -186,13 +186,13 @@ object RimeEngine {
             else -> candidates
         }
         var composition = getCurrentComposition(candidates)
-        if(Rime.getCurrentRimeSchema() == CustomConstant.SCHEMA_EN) {
-            if (InputModeSwitcherManager.isEnglishUpperCase) {
+        if(InputModeSwitcherManager.useLatinRimeCandidateCasing) {
+            if (InputModeSwitcherManager.isEnglishUpperCase || InputModeSwitcherManager.isJapaneseUpperCase) {
                 for (item in showCandidates) item.text = item.text.lowercase()
                     .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
                 composition = composition.lowercase()
                     .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-            } else if (InputModeSwitcherManager.isEnglishUpperLockCase) {
+            } else if (InputModeSwitcherManager.isEnglishUpperLockCase || InputModeSwitcherManager.isJapaneseUpperLockCase) {
                 for (item in showCandidates) item.text = item.text.uppercase()
                 composition = composition.uppercase()
             } else {
@@ -227,7 +227,7 @@ object RimeEngine {
     private fun getCurrentComposition(candidates: List<CandidateListItem>): String {
         val composition = Rime.compositionText
         val rimeSchema = Rime.getCurrentRimeSchema()
-        if(rimeSchema == CustomConstant.SCHEMA_EN) return ""
+        if (InputModeSwitcherManager.isEnglish || InputModeSwitcherManager.isJapanese) return ""
         if(composition.isEmpty()) return ""
         if(candidates.isEmpty()) return composition
         val comment = candidates.first().comment

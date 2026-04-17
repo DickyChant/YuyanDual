@@ -159,6 +159,9 @@ object InputModeSwitcherManager {
      */
     private const val MASK_LANGUAGE_EN = 0x0020
 
+    /** 日语（Rime 罗马字等），与英文共用 QWERTY 布局位 */
+    private const val MASK_LANGUAGE_JP = 0x0030
+
     /**
      * 第5位指明软键盘当前的状态，比如高（大写），低（小写）。
      */
@@ -206,6 +209,13 @@ object InputModeSwitcherManager {
      */
     private const val MODE_SKB_ENGLISH_UPPER_LOCK =
         MASK_SKB_LAYOUT_QWERTY_ABC or MASK_LANGUAGE_EN or MASK_CASE_UPPER_LOCK
+
+    private const val MODE_JP_LOWER =
+        MASK_SKB_LAYOUT_QWERTY_ABC or MASK_LANGUAGE_JP or MASK_CASE_LOWER
+    private const val MODE_JP_UPPER =
+        MASK_SKB_LAYOUT_QWERTY_ABC or MASK_LANGUAGE_JP or MASK_CASE_UPPER
+    private const val MODE_JP_UPPER_LOCK =
+        MASK_SKB_LAYOUT_QWERTY_ABC or MASK_LANGUAGE_JP or MASK_CASE_UPPER_LOCK
 
     /**
      * Unset mode. 未设置输入法模式。
@@ -280,18 +290,34 @@ object InputModeSwitcherManager {
         var newInputMode = MODE_UNSET
         if (USER_DEF_KEYCODE_SHIFT_1 == userKey) {
             if(isChinese && !isChineseMode)isChineseMode = true
-            newInputMode = if(System.currentTimeMillis() - lsatClickTime < 300){
-                MODE_SKB_ENGLISH_UPPER_LOCK
-            } else if (MODE_SKB_ENGLISH_LOWER == mInputMode) {
-                MODE_SKB_ENGLISH_UPPER
-            } else if (MODE_SKB_ENGLISH_UPPER == mInputMode || MODE_SKB_ENGLISH_UPPER_LOCK == mInputMode){
-                if(isChineseMode) getInstance().internal.inputMethodPinyinMode.getValue() else MODE_SKB_ENGLISH_LOWER
-            } else {
-                MODE_SKB_ENGLISH_LOWER
+            val now = System.currentTimeMillis()
+            val doubleTap = now - lsatClickTime < 300
+            lsatClickTime = now
+            newInputMode = when {
+                doubleTap -> if (isJapanese) MODE_JP_UPPER_LOCK else MODE_SKB_ENGLISH_UPPER_LOCK
+                MODE_SKB_ENGLISH_LOWER == mInputMode -> MODE_SKB_ENGLISH_UPPER
+                MODE_JP_LOWER == mInputMode -> MODE_JP_UPPER
+                MODE_SKB_ENGLISH_UPPER == mInputMode || MODE_SKB_ENGLISH_UPPER_LOCK == mInputMode ->
+                    if (isChineseMode) getInstance().internal.inputMethodPinyinMode.getValue() else MODE_SKB_ENGLISH_LOWER
+                MODE_JP_UPPER == mInputMode || MODE_JP_UPPER_LOCK == mInputMode ->
+                    if (isChineseMode) getInstance().internal.inputMethodPinyinMode.getValue() else MODE_JP_LOWER
+                else -> if (isJapanese) MODE_JP_LOWER else MODE_SKB_ENGLISH_LOWER
             }
-            lsatClickTime = System.currentTimeMillis()
         } else if (USER_DEF_KEYCODE_LANG_2 == userKey) {
-            newInputMode = if (isChinese) {
+            newInputMode = if (getInstance().input.japaneseMultilingualCycle.getValue()) {
+                when {
+                    isChinese -> {
+                        isChineseMode = false
+                        MODE_SKB_ENGLISH_LOWER
+                    }
+                    isEnglish -> MODE_JP_LOWER
+                    isJapanese -> {
+                        isChineseMode = true
+                        getInstance().internal.inputMethodPinyinMode.getValue()
+                    }
+                    else -> getInstance().internal.inputMethodPinyinMode.getValue()
+                }
+            } else if (isChinese) {
                 isChineseMode = false
                 MODE_SKB_ENGLISH_LOWER
             } else {
@@ -386,6 +412,14 @@ object InputModeSwitcherManager {
          * 是否是软件盘英语模式
          */
         get() = mInputMode and MASK_LANGUAGE == MASK_LANGUAGE_EN
+
+    val isJapanese: Boolean
+        get() = mInputMode and MASK_LANGUAGE == MASK_LANGUAGE_JP
+
+    /** 与英文类似的拉丁键盘大写/候选样式（用于 RimeEngine、键盘绘制） */
+    val useLatinRimeCandidateCasing: Boolean
+        get() = isEnglish || isJapanese
+
     val isEnglishLower: Boolean
         /**
          * 是否是软键盘高（小写）模式
@@ -404,6 +438,15 @@ object InputModeSwitcherManager {
          */
         get() = mInputMode and (MASK_SKB_LAYOUT or MASK_LANGUAGE or MASK_CASE) == MODE_SKB_ENGLISH_UPPER_LOCK
 
+    val isJapaneseLower: Boolean
+        get() = mInputMode and (MASK_SKB_LAYOUT or MASK_LANGUAGE or MASK_CASE) == MODE_JP_LOWER
+
+    val isJapaneseUpperCase: Boolean
+        get() = mInputMode and (MASK_SKB_LAYOUT or MASK_LANGUAGE or MASK_CASE) == MODE_JP_UPPER
+
+    val isJapaneseUpperLockCase: Boolean
+        get() = mInputMode and (MASK_SKB_LAYOUT or MASK_LANGUAGE or MASK_CASE) == MODE_JP_UPPER_LOCK
+
     /**
      * 保存新的输入法模式
      */
@@ -414,10 +457,14 @@ object InputModeSwitcherManager {
             val charCase = mInputMode and MASK_CASE
             mToggleStates.charCase = charCase
             Kernel.initImeSchema(CustomConstant.SCHEMA_EN)
+        } else if (isJapanese) {
+            val charCase = mInputMode and MASK_CASE
+            mToggleStates.charCase = charCase
+            Kernel.initImeSchema(getInstance().internal.japaneseRimeSchema.getValue())
         } else {
             Kernel.initImeSchema(getInstance().internal.pinyinModeRime.getValue())
         }
-        if (isChinese || isEnglish) {
+        if (isChinese || isEnglish || isJapanese) {
             mRecentLauageInputMode = mInputMode
             getInstance().internal.inputDefaultMode.setValue(mInputMode)
         }

@@ -116,7 +116,8 @@ open class BaseKeyboardView(mContext: Context?) : View(mContext) {
                 startVoiceRecognition()
                 mLongPressKey = true
             } else if (softKey.getkeyLabel().isNotBlank() && softKey.code != InputModeSwitcherManager.USER_DEF_KEYCODE_EMOJI_8 ) {
-                val keyLabel = if (InputModeSwitcherManager.isEnglishLower || (InputModeSwitcherManager.isEnglishUpperCase && !DecodingInfo.isCandidatesListEmpty))
+                val keyLabel = if (InputModeSwitcherManager.isEnglishLower || InputModeSwitcherManager.isJapaneseLower ||
+                    ((InputModeSwitcherManager.isEnglishUpperCase || InputModeSwitcherManager.isJapaneseUpperCase) && !DecodingInfo.isCandidatesListEmpty))
                     softKey.keyLabel.lowercase()  else softKey.keyLabel
                 val designPreset = setOf("，", "。", ",", ".")
                 val smallLabel = if(designPreset.any { it == keyLabel } || !keyboardSymbol) "" else softKey.getmKeyLabelSmall()

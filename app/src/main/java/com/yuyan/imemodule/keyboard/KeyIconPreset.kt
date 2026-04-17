@@ -19,6 +19,7 @@ val keyIconRecords: Map<Int, Drawable?> = mapOf(
     Objects.hash(InputModeSwitcherManager.USER_DEF_KEYCODE_LANG_2, 0) to ContextCompat.getDrawable(Launcher.instance.context, R.drawable.sdk_skb_key_input_mode_cn_icon),
     Objects.hash(InputModeSwitcherManager.USER_DEF_KEYCODE_LANG_2, 1) to ContextCompat.getDrawable(Launcher.instance.context, R.drawable.sdk_skb_key_input_mode_en_icon),
     Objects.hash(InputModeSwitcherManager.USER_DEF_KEYCODE_LANG_2, 2) to ContextCompat.getDrawable(Launcher.instance.context, R.drawable.sdk_skb_key_input_mode_language),
+    Objects.hash(InputModeSwitcherManager.USER_DEF_KEYCODE_LANG_2, 3) to ContextCompat.getDrawable(Launcher.instance.context, R.drawable.sdk_skb_key_input_mode_language),
     Objects.hash(InputModeSwitcherManager.USER_DEF_KEYCODE_EMOJI_4, 0) to ContextCompat.getDrawable(Launcher.instance.context, R.drawable.ic_menu_emoji),
     Objects.hash(InputModeSwitcherManager.USER_DEF_KEYCODE_EMOJI_8, 0) to ContextCompat.getDrawable(Launcher.instance.context, R.drawable.skb_key_comma_emoji),
     Objects.hash(KeyEvent.KEYCODE_SPACE, 0) to ContextCompat.getDrawable(Launcher.instance.context, R.drawable.sdk_skb_key_space_icon),

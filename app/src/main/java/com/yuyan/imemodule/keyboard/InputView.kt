@@ -275,7 +275,7 @@ class InputView(context: Context, service: ImeService) : LifecycleRelativeLayout
         } else if (sKey.isUserDefKey || sKey.isUniStrKey) { // 是用户定义的keycode
             if (!DecodingInfo.isAssociate && !DecodingInfo.isCandidatesListEmpty) {
                 if(InputModeSwitcherManager.isChinese)   chooseAndUpdate()
-                else if(InputModeSwitcherManager.isEnglish)  commitDecInfoText(DecodingInfo.composingStrForCommit)  // 把输入的拼音字符串发送给EditText
+                else if(InputModeSwitcherManager.isEnglish || InputModeSwitcherManager.isJapanese)  commitDecInfoText(DecodingInfo.composingStrForCommit)  // 把输入的拼音字符串发送给EditText
             }
             if (InputModeSwitcherManager.USER_DEF_KEYCODE_SYMBOL_3 == keyCode) {  // 点击标点按钮
                 KeyboardManager.instance.switchKeyboard(KeyboardManager.KeyboardType.SYMBOL)
@@ -331,7 +331,7 @@ class InputView(context: Context, service: ImeService) : LifecycleRelativeLayout
         if (result.first != PopupMenuMode.None && !DecodingInfo.isAssociate && !DecodingInfo.isCandidatesListEmpty) {
             if(InputModeSwitcherManager.isChinese) {
                 chooseAndUpdate()
-            } else if(InputModeSwitcherManager.isEnglish){
+            } else if(InputModeSwitcherManager.isEnglish || InputModeSwitcherManager.isJapanese){
                 commitDecInfoText(DecodingInfo.composingStrForCommit)
             }
         }
@@ -382,10 +382,10 @@ class InputView(context: Context, service: ImeService) : LifecycleRelativeLayout
     fun processKey(event: KeyEvent): Boolean {
         // 功能键处理
         if (processFunctionKeys(event)) return true
-        val englishCellDisable = InputModeSwitcherManager.isEnglish && !getInstance().input.abcSearchEnglishCell.getValue()
+        val englishCellDisable = (InputModeSwitcherManager.isEnglish || InputModeSwitcherManager.isJapanese) && !getInstance().input.abcSearchEnglishCell.getValue()
         val result = if(englishCellDisable){
             processEnglishKey(event)
-        } else if (InputModeSwitcherManager.isEnglish || InputModeSwitcherManager.isChinese) { // 中文、英语输入模式
+        } else if (InputModeSwitcherManager.isEnglish || InputModeSwitcherManager.isChinese || InputModeSwitcherManager.isJapanese) { // 中文、英语、日语(Rime)输入模式
             processInput(event)
         } else { // 数字、符号处理
             processEnglishKey(event)
@@ -405,7 +405,7 @@ class InputView(context: Context, service: ImeService) : LifecycleRelativeLayout
             if(mImeState != ImeState.STATE_IDLE) resetToIdleState()
             return true
         } else if(keyCode in (KeyEvent.KEYCODE_A .. KeyEvent.KEYCODE_Z) ){
-            if (!InputModeSwitcherManager.isEnglishLower) keyChar = keyChar - 'a'.code + 'A'.code
+            if (!InputModeSwitcherManager.isEnglishLower && !InputModeSwitcherManager.isJapaneseLower) keyChar = keyChar - 'a'.code + 'A'.code
             commitText(keyChar.toChar().toString())
             return true
         } else if (keyCode != 0) {
@@ -431,11 +431,17 @@ class InputView(context: Context, service: ImeService) : LifecycleRelativeLayout
                 return true
             }
         } else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_SPACE) {
-            if (DecodingInfo.isFinish || (DecodingInfo.isAssociate && !mSkbCandidatesBarView.isActiveCand())) {
-                sendKeyEvent(keyCode)
-                if(mImeState != ImeState.STATE_IDLE) resetToIdleState()
-            } else {
-                chooseAndUpdate()
+            when {
+                DecodingInfo.isFinish -> {
+                    sendKeyEvent(keyCode)
+                    if (mImeState != ImeState.STATE_IDLE) resetToIdleState()
+                }
+                DecodingInfo.isAssociate && !mSkbCandidatesBarView.isActiveCand() -> {
+                    if (!DecodingInfo.isCandidatesListEmpty) chooseAndUpdate(0)
+                    else sendKeyEvent(keyCode)
+                    if (mImeState != ImeState.STATE_IDLE) resetToIdleState()
+                }
+                else -> chooseAndUpdate()
             }
             return true
         } else if (keyCode == KeyEvent.KEYCODE_CLEAR) {
@@ -444,6 +450,8 @@ class InputView(context: Context, service: ImeService) : LifecycleRelativeLayout
         }  else if (keyCode == KeyEvent.KEYCODE_ENTER) {
             if (DecodingInfo.isFinish || DecodingInfo.isAssociate) {
                 sendKeyEvent(keyCode)
+            } else if (!DecodingInfo.isCandidatesListEmpty && getInstance().input.compositionEnterSelectsFirstCandidate.getValue()) {
+                chooseAndUpdate(0)
             } else {
                 commitDecInfoText(DecodingInfo.composingStrForCommit)
             }
@@ -535,7 +543,7 @@ class InputView(context: Context, service: ImeService) : LifecycleRelativeLayout
                 if(mImeState != ImeState.STATE_PREDICT)resetToPredictState()
             } else {  // 不上屏，继续选择
                 if (!DecodingInfo.isFinish) {
-                    if (InputModeSwitcherManager.isEnglish) setComposingText(DecodingInfo.composingStrForCommit)
+                    if (InputModeSwitcherManager.isEnglish || InputModeSwitcherManager.isJapanese) setComposingText(DecodingInfo.composingStrForCommit)
                     updateCandidateBar()
                     (KeyboardManager.instance.currentContainer as? T9TextContainer)?.updateSymbolListView()
                 } else {
@@ -556,7 +564,7 @@ class InputView(context: Context, service: ImeService) : LifecycleRelativeLayout
         } else {
             if(mImeState != ImeState.STATE_IDLE) resetToIdleState()
         }
-        if (InputModeSwitcherManager.isEnglish)setComposingText(DecodingInfo.composingStrForCommit)
+        if (InputModeSwitcherManager.isEnglish || InputModeSwitcherManager.isJapanese) setComposingText(DecodingInfo.composingStrForCommit)
     }
 
     /**
@@ -657,6 +665,10 @@ class InputView(context: Context, service: ImeService) : LifecycleRelativeLayout
     fun requestHideSelf() {
         // 同步请求系统收起，并确保副屏窗口被关闭
         service.forceHideKeyboard()
+    }
+
+    fun requestDualScreenPlacementRefresh() {
+        service.requestRefreshKeyboardPlacement()
     }
 
     /**
@@ -801,7 +813,7 @@ class InputView(context: Context, service: ImeService) : LifecycleRelativeLayout
     private var oldCandidatesEnd = 0
     fun onUpdateSelection(oldSelStart: Int, oldSelEnd: Int, newSelStart: Int, newSelEnd: Int, candidatesEnd: Int) {
         selStart = newSelStart; selEnd = newSelEnd
-        if(oldCandidatesEnd == candidatesEnd && InputModeSwitcherManager.isEnglish && !DecodingInfo.isCandidatesListEmpty && !DecodingInfo.isAssociate){
+        if(oldCandidatesEnd == candidatesEnd && (InputModeSwitcherManager.isEnglish || InputModeSwitcherManager.isJapanese) && !DecodingInfo.isCandidatesListEmpty && !DecodingInfo.isAssociate){
             service.finishComposingText()
             resetToPredictState()
         }

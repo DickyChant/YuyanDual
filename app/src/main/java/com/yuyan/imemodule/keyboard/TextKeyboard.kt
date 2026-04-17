@@ -79,22 +79,37 @@ open class TextKeyboard(context: Context?) : BaseKeyboardView(context){
      * 刷新按键状态
      */
     fun updateStates() {
-        if (InputModeSwitcherManager.isEnglish) {
-            var softKey = mSoftKeyboard?.getKeyByCode(KeyEvent.KEYCODE_ENTER) as SoftKeyToggle??: return
-            softKey.enableToggleState( if(mService!!.isAddPhrases)4 else InputModeSwitcherManager.mToggleStates.mStateEnter)
-            softKey = mSoftKeyboard?.getKeyByCode(InputModeSwitcherManager.USER_DEF_KEYCODE_SHIFT_1) as SoftKeyToggle??: return
-            var stateId = InputModeSwitcherManager.mToggleStates.charCase
-            val isEnglishCell = AppPrefs.getInstance().input.abcSearchEnglishCell.getValue()
-            if(isEnglishCell&& stateId in 0..2) stateId += 3
-            else if(!isEnglishCell && stateId in 3..5)stateId -= 3
-            softKey.enableToggleState(stateId)
-            invalidateView()
-        } else {
-            val softKey = mSoftKeyboard?.getKeyByCode(KeyEvent.KEYCODE_ENTER) as SoftKeyToggle??: return
-            if (softKey.enableToggleState(if(mService!!.isAddPhrases)4 else InputModeSwitcherManager.mToggleStates.mStateEnter)) {
-                invalidateKey()
+        try {
+            if (InputModeSwitcherManager.isEnglish || InputModeSwitcherManager.isJapanese) {
+                var softKey = mSoftKeyboard?.getKeyByCode(KeyEvent.KEYCODE_ENTER) as SoftKeyToggle? ?: return
+                softKey.enableToggleState(if (mService!!.isAddPhrases) 4 else InputModeSwitcherManager.mToggleStates.mStateEnter)
+                softKey = mSoftKeyboard?.getKeyByCode(InputModeSwitcherManager.USER_DEF_KEYCODE_SHIFT_1) as SoftKeyToggle? ?: return
+                var stateId = InputModeSwitcherManager.mToggleStates.charCase
+                val isEnglishCell = AppPrefs.getInstance().input.abcSearchEnglishCell.getValue()
+                if (isEnglishCell && stateId in 0..2) stateId += 3
+                else if (!isEnglishCell && stateId in 3..5) stateId -= 3
+                softKey.enableToggleState(stateId)
+                invalidateView()
+            } else {
+                val softKey = mSoftKeyboard?.getKeyByCode(KeyEvent.KEYCODE_ENTER) as SoftKeyToggle? ?: return
+                if (softKey.enableToggleState(if (mService!!.isAddPhrases) 4 else InputModeSwitcherManager.mToggleStates.mStateEnter)) {
+                    invalidateKey()
+                }
             }
+        } finally {
+            refreshLanguageKeyVisual()
         }
+    }
+
+    private fun refreshLanguageKeyVisual() {
+        val langKey = mSoftKeyboard?.getKeyByCode(InputModeSwitcherManager.USER_DEF_KEYCODE_LANG_2) ?: return
+        langKey.stateId = when {
+            InputModeSwitcherManager.isChinese -> 0
+            InputModeSwitcherManager.isEnglish -> 1
+            InputModeSwitcherManager.isJapanese -> 3
+            else -> 0
+        }
+        invalidateKey()
     }
 
     /**
@@ -205,8 +220,9 @@ open class TextKeyboard(context: Context?) : BaseKeyboardView(context){
                 bg.setBounds(softKey.mLeft + keyMarginX, softKey.mTop + keyMarginY, softKey.mRight - keyMarginX, softKey.mBottom - keyMarginY)
                 bg.draw(canvas)
         }
-        val keyLabel = if(mService != null && InputModeSwitcherManager.isEnglish) {
-            if (InputModeSwitcherManager.isEnglishLower || (InputModeSwitcherManager.isEnglishUpperCase && !DecodingInfo.isCandidatesListEmpty)) {
+        val keyLabel = if(mService != null && (InputModeSwitcherManager.isEnglish || InputModeSwitcherManager.isJapanese)) {
+            if (InputModeSwitcherManager.isEnglishLower || InputModeSwitcherManager.isJapaneseLower ||
+                ((InputModeSwitcherManager.isEnglishUpperCase || InputModeSwitcherManager.isJapaneseUpperCase) && !DecodingInfo.isCandidatesListEmpty)) {
                 softKey.keyLabel.lowercase()
             } else softKey.keyLabel
         } else softKey.keyLabel

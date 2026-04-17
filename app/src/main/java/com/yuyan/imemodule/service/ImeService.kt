@@ -283,14 +283,44 @@ class ImeService : InputMethodService() {
             else -> EnvironmentSingleton.DisplayState.SecondaryPortrait
         }
         EnvironmentSingleton.instance.currentDisplayState = inferredState
-        EnvironmentSingleton.instance.forceFullOnSecondary = inferredState == EnvironmentSingleton.DisplayState.SecondaryFullscreen
-        // Log.d(logTag, "inferredState=$inferredState from width=$widthPx height=$heightPx") // 调试标签已隐藏
 
-        val shouldUsePresentation = inferredState == EnvironmentSingleton.DisplayState.SecondaryFullscreen
+        val dmSys = displayManager ?: getSystemService(DisplayManager::class.java)
+        val presentationDisplays = dmSys?.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION)
+        val hasPresentationDisplay = !presentationDisplays.isNullOrEmpty()
+        val pinKeyboardOnSecondary = getInstance().dualScreen.dualPinKeyboardOnPresentationDisplay.getValue()
+        val heuristicFullscreen = inferredState == EnvironmentSingleton.DisplayState.SecondaryFullscreen
+        val shouldUsePresentation = heuristicFullscreen || (pinKeyboardOnSecondary && hasPresentationDisplay)
+
+        val dualForceFull = getInstance().dualScreen.dualForceFullscreenPrimary.getValue()
+        EnvironmentSingleton.instance.forceFullOnSecondary = when {
+            !shouldUsePresentation -> false
+            heuristicFullscreen && dualForceFull -> true
+            pinKeyboardOnSecondary && hasPresentationDisplay -> {
+                val second = presentationDisplays?.firstOrNull() ?: return@when false
+                val secW = try {
+                    createDisplayContext(second).resources.displayMetrics.widthPixels
+                } catch (_: Throwable) {
+                    0
+                }
+                secW >= 1920 && dualForceFull
+            }
+            else -> false
+        }
+
         val shownOnSecondary = if (shouldUsePresentation) {
             tryShowSecondary(editorInfo, restarting)
         } else {
             false
+        }
+        if (shownOnSecondary && pinKeyboardOnSecondary && !heuristicFullscreen) {
+            val dmSec = secondaryPresentation?.context?.resources?.displayMetrics
+            if (dmSec != null) {
+                EnvironmentSingleton.instance.currentDisplayState = when {
+                    dmSec.widthPixels >= 1920 -> EnvironmentSingleton.DisplayState.SecondaryFullscreen
+                    dmSec.widthPixels in 1081..1919 -> EnvironmentSingleton.DisplayState.SecondaryLandscape
+                    else -> EnvironmentSingleton.DisplayState.SecondaryPortrait
+                }
+            }
         }
         // Log.d(logTag, "shownOnSecondary=$shownOnSecondary") // 调试标签已隐藏
 
@@ -319,6 +349,14 @@ class ImeService : InputMethodService() {
 
         // 最后刷新调试标签，确保当前场景被正确显示
         // refreshDebugLabel() // 调试标签已隐藏
+    }
+
+    /**
+     * 双屏/固定副屏等设置变更后，在不关闭输入法的情况下重新应用 [onStartInputView] 的布局逻辑。
+     */
+    fun requestRefreshKeyboardPlacement() {
+        val info = currentInputEditorInfo ?: return
+        onStartInputView(info, true)
     }
 
     private fun applyRelayoutIfDisplayChanged() {

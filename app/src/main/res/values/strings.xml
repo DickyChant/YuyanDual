@@ -209,6 +209,7 @@
     <string name="x_recycler_load_more_message">正在加载更多数据，请稍后</string>
     <string name="lock_view">锁定键盘</string>
     <string name="menu_text_edit">文本编辑</string>
+    <string name="menu_pin_keyboard_secondary">固定到副屏键盘</string>
     <string name="export_user_data">导出用户数据</string>
     <string name="import_user_data">导入用户数据</string>
     <string name="exception_user_data_filename">文件的拓展名不是备份数据</string>
@@ -226,6 +227,15 @@
     <!-- 新增：双屏设置 -->
     <string name="setting_dual_screen">双屏</string>
     <string name="dual_force_fullscreen_primary">主屏激活时强制全屏</string>
+    <string name="dual_force_fullscreen_primary_tips">开启时副屏全宽键盘使用黑色全屏底；关闭时仅底部透明键盘条</string>
+    <string name="dual_pin_keyboard_presentation">固定使用副屏 Presentation 键盘</string>
+    <string name="dual_pin_keyboard_presentation_tips">有第二块屏时始终在该屏显示键盘（不限于主屏宽度≥1920 的启发式）</string>
+
+    <string name="multilingual_input_setting">多语言输入</string>
+    <string name="japanese_multilingual_cycle">中/英/日三键循环</string>
+    <string name="japanese_multilingual_cycle_tips">开启后地球键依次切换中文、英文、日语（Rime schema 见内置说明）</string>
+    <string name="composition_enter_selects_first_candidate">回车首选上屏</string>
+    <string name="composition_enter_selects_first_candidate_tips">有候选时回车提交第一项；关闭则回车提交未转换的拼音串（旧行为）</string>
 
     <!-- 语音识别设置 -->
     <string name="voice_input_enabled">启用语音输入</string>

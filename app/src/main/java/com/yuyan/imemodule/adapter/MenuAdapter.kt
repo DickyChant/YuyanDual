@@ -127,6 +127,7 @@ class MenuAdapter (context: Context?, val data: MutableList<SkbFunItem>) : Recyc
             SkbMenuMode.Pinyin26Double -> rimeValue.startsWith(CustomConstant.SCHEMA_ZH_DOUBLE_FLYPY) && rimeValue != CustomConstant.SCHEMA_ZH_DOUBLE_LX17
             SkbMenuMode.PinyinStroke -> rimeValue == CustomConstant.SCHEMA_ZH_STROKE
             SkbMenuMode.TextEdit -> InputModeSwitcherManager.isTextEditSkb
+            SkbMenuMode.PinKeyboardToSecondary -> AppPrefs.getInstance().dualScreen.dualPinKeyboardOnPresentationDisplay.getValue()
             else -> false
         }
         return result

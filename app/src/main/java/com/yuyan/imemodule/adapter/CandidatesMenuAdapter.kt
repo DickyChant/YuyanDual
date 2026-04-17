@@ -104,6 +104,7 @@ class CandidatesMenuAdapter(context: Context?) : RecyclerView.Adapter<Candidates
             SkbMenuMode.PinyinStroke -> rimeValue == CustomConstant.SCHEMA_ZH_STROKE
             SkbMenuMode.LockClipBoard -> CustomConstant.lockClipBoardEnable
             SkbMenuMode.TextEdit -> InputModeSwitcherManager.isTextEditSkb
+            SkbMenuMode.PinKeyboardToSecondary -> AppPrefs.getInstance().dualScreen.dualPinKeyboardOnPresentationDisplay.getValue()
             else -> false
         }
         return result

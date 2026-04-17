@@ -134,6 +134,11 @@ fun onSettingsMenuClick(inputView: InputView, skbMenuMode: SkbMenuMode) {
                 if(InputModeSwitcherManager.isTextEditSkb) InputModeSwitcherManager.USER_DEF_KEYCODE_RETURN_6
                 else InputModeSwitcherManager.USER_DEF_KEYCODE_TEXTEDIT_7)
         }
+        SkbMenuMode.PinKeyboardToSecondary -> {
+            val p = AppPrefs.getInstance().dualScreen.dualPinKeyboardOnPresentationDisplay
+            p.setValue(!p.getValue())
+            inputView.requestDualScreenPlacementRefresh()
+        }
         else ->{}
     }
 }
