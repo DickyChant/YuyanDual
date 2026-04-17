@@ -21,6 +21,7 @@ import com.yuyan.imemodule.prefs.behavior.KeyboardSymbolSlideUpMod
 import com.yuyan.imemodule.prefs.behavior.PopupMenuMode
 import com.yuyan.imemodule.service.DecodingInfo
 import com.yuyan.imemodule.singleton.EnvironmentSingleton
+import com.yuyan.imemodule.utils.AgentDebugLog
 import com.yuyan.imemodule.utils.DevicesUtils
 import com.yuyan.imemodule.view.popup.PopupComponent
 import com.yuyan.imemodule.view.popup.PopupComponent.Companion.get
@@ -148,7 +149,18 @@ open class BaseKeyboardView(mContext: Context?) : View(mContext) {
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(me: MotionEvent): Boolean {
         var result = false
-        if (mGestureDetector!!.onTouchEvent(me)) {
+        val gdConsumed = mGestureDetector!!.onTouchEvent(me)
+        // #region agent log
+        if (gdConsumed && (me.actionMasked == MotionEvent.ACTION_UP || me.actionMasked == MotionEvent.ACTION_POINTER_UP)) {
+            AgentDebugLog.line(
+                "A",
+                "BaseKeyboardView.onTouchEvent",
+                "gestureDetector consumed touch (UP)",
+                mapOf("action" to me.actionMasked, "x" to me.x, "y" to me.y)
+            )
+        }
+        // #endregion
+        if (gdConsumed) {
             return true
         }
         when (val action = me.actionMasked) {

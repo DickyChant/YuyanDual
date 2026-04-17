@@ -11,6 +11,8 @@ import com.yuyan.inputmethod.core.Rime
 import com.yuyan.inputmethod.data.InputKey
 import com.yuyan.inputmethod.data.KeyRecordStack
 import com.yuyan.inputmethod.util.DoublePinYinUtils
+import com.yuyan.imemodule.utils.AgentDebugLog
+import com.yuyan.imemodule.utils.KeyEventUnicodeCompat
 import com.yuyan.inputmethod.util.LX17PinYinUtils
 import com.yuyan.inputmethod.util.QwertyPinYinUtils
 import com.yuyan.inputmethod.util.T9PinYinUtils
@@ -46,9 +48,23 @@ object RimeEngine {
 
     fun onNormalKey(event: KeyEvent) {
         val keyCode = event.keyCode
-        val keyChar = if(keyCode == KeyEvent.KEYCODE_APOSTROPHE) if(isFinish()) '/'.code else '\''.code
-            else event.unicodeChar
-        if (keyRecordStack.pushKey(event))Rime.processKey(keyChar, event.action)
+        val directUnicode = event.unicodeChar
+        val keyChar = if (keyCode == KeyEvent.KEYCODE_APOSTROPHE) {
+            if (isFinish()) '/'.code else '\''.code
+        } else {
+            KeyEventUnicodeCompat.resolveUnicodeChar(event)
+        }
+        // #region agent log
+        if (keyCode in KeyEvent.KEYCODE_A..KeyEvent.KEYCODE_Z && directUnicode == 0 && keyChar != 0) {
+            AgentDebugLog.line(
+                "C",
+                "RimeEngine.onNormalKey",
+                "unicode fallback used",
+                mapOf("keyCode" to keyCode, "directUnicode" to directUnicode, "resolved" to keyChar)
+            )
+        }
+        // #endregion
+        if (keyRecordStack.pushKey(event)) Rime.processKey(keyChar, event.action)
         updateCandidatesOrCommitText()
     }
 

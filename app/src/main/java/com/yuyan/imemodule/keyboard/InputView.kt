@@ -48,6 +48,7 @@ import com.yuyan.imemodule.utils.DevicesUtils
 import com.yuyan.imemodule.utils.InputMethodUtil
 import com.yuyan.imemodule.utils.KeyboardLoaderUtil
 import com.yuyan.imemodule.utils.LogUtil
+import com.yuyan.imemodule.utils.KeyEventUnicodeCompat
 import com.yuyan.imemodule.utils.StringUtils
 import com.yuyan.imemodule.view.CandidatesBar
 import com.yuyan.imemodule.view.EditPhrasesView
@@ -398,7 +399,7 @@ class InputView(context: Context, service: ImeService) : LifecycleRelativeLayout
      */
     private fun processEnglishKey(event: KeyEvent): Boolean {
         val keyCode = event.keyCode
-        var keyChar = event.unicodeChar
+        var keyChar = KeyEventUnicodeCompat.resolveUnicodeChar(event)
         val lable = keyChar.toChar().toString()
         if (keyCode == KeyEvent.KEYCODE_DEL) {
             sendKeyEvent(keyCode)
@@ -475,7 +476,7 @@ class InputView(context: Context, service: ImeService) : LifecycleRelativeLayout
      */
     private fun processInput(event: KeyEvent): Boolean {
         val keyCode = event.keyCode
-        val keyChar = event.unicodeChar
+        val keyChar = KeyEventUnicodeCompat.resolveUnicodeChar(event)
         val lable = keyChar.toChar().toString()
         if (keyCode == KeyEvent.KEYCODE_DEL) {
             if (DecodingInfo.isFinish || DecodingInfo.isAssociate) {

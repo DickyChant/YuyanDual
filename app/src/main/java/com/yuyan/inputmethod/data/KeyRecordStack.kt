@@ -5,6 +5,7 @@ import com.yuyan.imemodule.application.CustomConstant
 import com.yuyan.inputmethod.RimeEngine.processDelAction
 import com.yuyan.inputmethod.core.Rime
 import com.yuyan.inputmethod.data.InputKey.QwertKey
+import com.yuyan.imemodule.utils.KeyEventUnicodeCompat
 import com.yuyan.inputmethod.util.LX17PinYinUtils
 import com.yuyan.inputmethod.util.T9PinYinUtils
 import java.util.LinkedList
@@ -18,7 +19,7 @@ class KeyRecordStack {
 
     fun pushKey(event: KeyEvent): Boolean {
         val keyCode = event.keyCode
-        val keyChar = event.unicodeChar
+        val keyChar = KeyEventUnicodeCompat.resolveUnicodeChar(event)
         val lastKey = keyRecords.lastOrNull()
         if (lastKey is InputKey.Apostrophe && keyRecords.size == 1) {
             processDelAction()
