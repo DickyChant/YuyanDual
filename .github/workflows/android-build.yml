@@ -1,5 +1,4 @@
 # Build the dualscreen debug APK on every push and PR (no signing secrets required).
-# Uses docker/android-build so CI matches scripts/docker-android-gradle.sh (JDK 17 + SDK 36).
 name: Android build
 
 on:
@@ -22,40 +21,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
 
-      - name: Build Android CI image
-        run: docker build -t yuyan-dual-android-build:ci -f docker/android-build/Dockerfile docker/android-build
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-      # Non-root Gradle needs a real HOME for AGP (~/.android). Clean root-owned intermediates so the
-      # same UID can delete/rebuild (e.g. after local Docker runs as root, or Kotlin .kotlin sessions).
+      - name: Gradle wrapper
+        run: chmod +x gradlew
+
+      # Gradle / AGP still expect ANDROID_HOME on many setups; setup-android sets ANDROID_SDK_ROOT.
       - name: Assemble dualscreen debug
-        run: |
-          docker run --rm -u 0 \
-            -v "${GITHUB_WORKSPACE}:/workspace" \
-            yuyan-dual-android-build:ci \
-            bash -lc 'rm -rf /workspace/app/build /workspace/build /workspace/.gradle /workspace/.kotlin /workspace/.ci-android-home || true'
-          mkdir -p "${GITHUB_WORKSPACE}/.ci-android-home"
-          docker run --rm \
-            --user "$(id -u):$(id -g)" \
-            -v "${GITHUB_WORKSPACE}:/workspace" \
-            -v "${HOME}/.gradle:/gradle-home" \
-            -e GRADLE_USER_HOME=/gradle-home \
-            -e HOME=/workspace/.ci-android-home \
-            -e ANDROID_SDK_HOME=/workspace/.ci-android-home \
-            -w /workspace \
-            -e ANDROID_HOME=/opt/android-sdk \
-            -e ANDROID_SDK_ROOT=/opt/android-sdk \
-            yuyan-dual-android-build:ci \
-            bash -lc 'chmod +x gradlew && ./gradlew :app:assembleDualscreenDebug --stacktrace --no-daemon'
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+        run: ./gradlew :app:assembleDualscreenDebug --stacktrace --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
