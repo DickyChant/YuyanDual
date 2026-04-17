@@ -12,11 +12,21 @@ object KeyEventUnicodeCompat {
     fun resolveUnicodeChar(event: KeyEvent): Int {
         val direct = event.unicodeChar
         if (direct != 0) return direct
-        if (event.keyCode == 0) return 0
-        return try {
-            KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD).get(event.keyCode, event.metaState)
+        val keyCode = event.keyCode
+        if (keyCode == 0) return 0
+        val viaMap = try {
+            KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD).get(keyCode, event.metaState)
         } catch (_: Throwable) {
             0
+        }
+        if (viaMap != 0) return viaMap
+        val shifted = event.metaState and (KeyEvent.META_SHIFT_ON or KeyEvent.META_CAPS_LOCK_ON) != 0
+        return when (keyCode) {
+            in KeyEvent.KEYCODE_A..KeyEvent.KEYCODE_Z ->
+                ((if (shifted) 'A'.code else 'a'.code) + (keyCode - KeyEvent.KEYCODE_A))
+            in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 ->
+                ('0'.code + (keyCode - KeyEvent.KEYCODE_0))
+            else -> 0
         }
     }
 }
