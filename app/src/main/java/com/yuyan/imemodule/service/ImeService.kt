@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.yuyan.imemodule.keyboard.InputView
+import com.yuyan.imemodule.manager.InputModeSwitcherManager
 import com.yuyan.imemodule.keyboard.container.ClipBoardContainer
 import com.yuyan.imemodule.prefs.behavior.SkbMenuMode
 import com.yuyan.imemodule.singleton.EnvironmentSingleton
@@ -45,6 +46,7 @@ import android.content.Intent
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
 import com.yuyan.imemodule.voice.VoiceRecognitionManager
+import com.yuyan.imemodule.R
 
 class ImeService : InputMethodService() {
     private var isWindowShown = false // 键盘窗口是否已显示
@@ -161,6 +163,24 @@ class ImeService : InputMethodService() {
     }
 
     private fun getActiveInputView(): InputView? = secondaryInputView ?: if (::mInputView.isInitialized) mInputView else null
+
+    /**
+     * 副屏 [InputView] 构造时会调用 [KeyboardManager.setData]，把单例绑到副屏根视图。
+     * 回到主屏时必须重新绑定到主屏 [mInputView]，并清掉仍引用副屏实例的缓存容器，否则按键无响应。
+     */
+    private fun rebindPrimaryKeyboardManager() {
+        if (!::mInputView.isInitialized) return
+        KeyboardManager.instance.setData(
+            mInputView.mSkbRoot.findViewById(R.id.skb_input_keyboard_view),
+            mInputView
+        )
+        try {
+            KeyboardManager.instance.clearKeyboard()
+            KeyboardManager.instance.switchKeyboard(InputModeSwitcherManager.skbLayout)
+        } catch (t: Throwable) {
+            Log.e(logTag, "rebindPrimaryKeyboardManager: refresh layout failed", t)
+        }
+    }
 
     @Synchronized
     private fun tryShowSecondary(editorInfo: EditorInfo, restarting: Boolean): Boolean {
@@ -332,10 +352,18 @@ class ImeService : InputMethodService() {
         if (!shownOnSecondary) {
             if (!::mInputView.isInitialized) {
                 mInputView = InputView(baseContext, this)
+            } else {
+                rebindPrimaryKeyboardManager()
             }
             setInputView(mInputView)
             // Log.d(logTag, "setInputView normal with ${mInputView.javaClass.simpleName}") // 调试标签已隐藏
             mInputView.onStartInputView(editorInfo, restarting)
+        } else {
+            // 键盘在副屏 Presentation 上：主屏 IME 窗口只保留占位，避免用户点到仍可见但已脱离 KeyboardManager 的旧键盘
+            if (placeholderView == null) {
+                placeholderView = View(this)
+            }
+            super.setInputView(placeholderView!!)
         }
 
         // 根据当前实际显示设备刷新环境尺寸与显示状态
@@ -536,7 +564,11 @@ class ImeService : InputMethodService() {
     }
 
     override fun onComputeInsets(outInsets: InputMethodService.Insets) {
-        val activeView = getActiveInputView() ?: return
+        val activeView = getActiveInputView()
+        if (activeView == null) {
+            super.onComputeInsets(outInsets)
+            return
+        }
         // 副屏场景：主屏不受输入法影响，不调整内容区域（避免主屏被全屏输入框覆盖）
         if (secondaryInputView != null) {
             outInsets.apply {
