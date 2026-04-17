@@ -1,0 +1,8 @@
+.git/objects
+.gradle
+**/.gradle
+**/build
+.idea
+*.iml
+local.properties
+.cursor/debug-*.log

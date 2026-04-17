@@ -296,13 +296,17 @@ class ImeService : InputMethodService() {
             !shouldUsePresentation -> false
             heuristicFullscreen && dualForceFull -> true
             pinKeyboardOnSecondary && hasPresentationDisplay -> {
-                val second = presentationDisplays?.firstOrNull() ?: return@when false
-                val secW = try {
-                    createDisplayContext(second).resources.displayMetrics.widthPixels
-                } catch (_: Throwable) {
-                    0
+                val second = presentationDisplays?.firstOrNull()
+                if (second == null) {
+                    false
+                } else {
+                    val secW = try {
+                        createDisplayContext(second).resources.displayMetrics.widthPixels
+                    } catch (_: Throwable) {
+                        0
+                    }
+                    secW >= 1920 && dualForceFull
                 }
-                secW >= 1920 && dualForceFull
             }
             else -> false
         }
