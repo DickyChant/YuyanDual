@@ -64,7 +64,11 @@ object RimeEngine {
             )
         }
         // #endregion
-        if (keyRecordStack.pushKey(event)) Rime.processKey(keyChar, event.action)
+        // Rime 的第二个参数是 GDK 风格的修饰符掩码 (ShiftMask=1, …)，不是 Android 的 action。
+        // 软键盘点击合成的 KeyEvent 是 ACTION_UP(=1)，直接传下去会被 Rime 当成 Shift 按下，
+        // 导致拼音 schema 拒绝字母输入。这里按 metaState 推导真实掩码即可。
+        val rimeMask = if (event.metaState and (KeyEvent.META_SHIFT_ON or KeyEvent.META_CAPS_LOCK_ON) != 0) 1 else 0
+        if (keyRecordStack.pushKey(event)) Rime.processKey(keyChar, rimeMask)
         updateCandidatesOrCommitText()
     }
 
