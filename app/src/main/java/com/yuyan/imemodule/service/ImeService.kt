@@ -49,6 +49,9 @@ import com.yuyan.imemodule.voice.VoiceRecognitionManager
 import com.yuyan.imemodule.R
 
 class ImeService : InputMethodService() {
+    private val serviceJob = SupervisorJob()
+    private val serviceScope = CoroutineScope(serviceJob + Dispatchers.Main.immediate)
+
     private var isWindowShown = false // 键盘窗口是否已显示
     private lateinit var mInputView: InputView
     private var secondaryPresentation: KeyboardPresentation? = null
@@ -601,8 +604,7 @@ class ImeService : InputMethodService() {
      */
     private fun initializeVoiceRecognition() {
         try {
-            // 在后台线程初始化语音识别
-            GlobalScope.launch(Dispatchers.IO) {
+            serviceScope.launch(Dispatchers.IO) {
                 VoiceRecognitionManager.initialize()
             }
         } catch (e: Exception) {
@@ -708,7 +710,8 @@ class ImeService : InputMethodService() {
     override fun onDestroy() {
         super.onDestroy()
         currentInstance = null
-        
+        serviceJob.cancel()
+
         // 销毁语音识别
         try {
             VoiceRecognitionManager.destroy()
