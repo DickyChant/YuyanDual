@@ -635,6 +635,9 @@ DerivedData/
 *.ini
 *.yaml
 *.yml
+# Track GitHub Actions (the broad *.yml rule above would ignore them)
+!.github/workflows/
+!.github/workflows/*.yml
 *.toml
 *.json
 *.xml
