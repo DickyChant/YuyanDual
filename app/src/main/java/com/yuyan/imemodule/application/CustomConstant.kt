@@ -11,13 +11,14 @@ object CustomConstant {
     const val SCHEMA_ZH_T9 = "t9_pinyin" // 拼音九键
     const val SCHEMA_ZH_QWERTY = "pinyin" // 拼音全键
     const val SCHEMA_EN = "english"         // 英语方案
-    /** 日语 Rime schema id（需在 Rime 数据中提供对应方案；缺失时引擎可能保持上一方案） */
-    const val SCHEMA_JP = "japanese"
+    /** 日语 Rime schema id — 使用 m13253/rime-nihongo-romaji 方案（ローマ字→かな/漢字）。 */
+    const val SCHEMA_JP = "nihongo_romaji"
     const val SCHEMA_ZH_HANDWRITING = "handwriting" // 手写输入
     const val SCHEMA_ZH_DOUBLE_FLYPY = "double_pinyin_" // 小鹤双拼
     const val SCHEMA_ZH_DOUBLE_LX17 = "double_pinyin_ls17" // 乱序17双拼
     const val SCHEMA_ZH_STROKE = "stroke" // 五笔画
-    const val CURRENT_RIME_DICT_DATA_VERSIOM = 20251018
+    // Bumped when assets/rime/ contents change so on-device copies get refreshed.
+    const val CURRENT_RIME_DICT_DATA_VERSIOM = 20260418
     const val YUYAN_IME_REPO = "https://github.com/Maditer/YuyanDual"
     const val LICENSE_URL = "https://www.gnu.org/licenses/gpl-3.0.html"
     const val FEEDBACK_TXC_REPO = "https://github.com/gurecn/YuyanIme/issues"
