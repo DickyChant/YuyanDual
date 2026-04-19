@@ -1,4 +1,7 @@
-# Build the dualscreen debug APK on every push and PR (no signing secrets required).
+# Build the dualscreen release APK on every push and PR. The release buildType
+# falls back to AGP's debug signing key when no real keystore is present
+# (see app/build.gradle), so no signing secrets are required to produce an
+# installable APK.
 name: Android build
 
 on:
@@ -35,14 +38,14 @@ jobs:
         run: chmod +x gradlew
 
       # Gradle / AGP still expect ANDROID_HOME on many setups; setup-android sets ANDROID_SDK_ROOT.
-      - name: Assemble dualscreen debug
+      - name: Assemble dualscreen release
         env:
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
-        run: ./gradlew :app:assembleDualscreenDebug --stacktrace --no-daemon
+        run: ./gradlew :app:assembleDualscreenRelease --stacktrace --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: yuyan-dualscreen-debug-apk
-          path: app/build/outputs/apk/dualscreen/debug/*.apk
+          name: yuyan-dualscreen-release-apk
+          path: app/build/outputs/apk/dualscreen/release/*.apk
           if-no-files-found: error

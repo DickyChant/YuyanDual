@@ -87,6 +87,12 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard.cfg'
             if (keystorePropsFile.exists()) {
                 signingConfig signingConfigs.release
+            } else {
+                // CI fallback: sign with AGP's default debug keystore so the
+                // release APK is installable on-device even without a release
+                // keystore. Swap back to signingConfigs.release once a real
+                // keystore lands under keystore/.
+                signingConfig signingConfigs.debug
             }
             // 与SDK一致的应用名
             resValue("string", "app_name", "@string/ime_yuyan_name")
