@@ -72,8 +72,11 @@ tmp/
 captures/
 .gradle/
 
-# Ignore Rime build files
-src/main/assets/rime/build/
+# Rime data (schema source .yaml and compiled .bin) is shipped in-tree so CI
+# ships a working APK. Override the root `*.yaml` and `build/` rules for the
+# whole rime assets tree.
+!src/main/assets/rime/
+!src/main/assets/rime/**
 
 # Ignore local keystore properties
 ../keystore/keystore.properties
