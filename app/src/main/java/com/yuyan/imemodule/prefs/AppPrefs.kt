@@ -16,7 +16,6 @@ import com.yuyan.imemodule.prefs.behavior.DoublePinyinSchemaMode
 // import com.yuyan.imemodule.prefs.behavior.FullDisplayKeyMode // 已移除
 import com.yuyan.imemodule.prefs.behavior.HalfWidthSymbolsMode
 import com.yuyan.imemodule.prefs.behavior.KeyboardOneHandedMod
-import com.yuyan.imemodule.prefs.behavior.VoiceLanguageMode
 import com.yuyan.imemodule.utils.DevicesUtils
 
 
@@ -238,28 +237,6 @@ class AppPrefs(private val sharedPreferences: SharedPreferences) {
         )
     }
 
-    inner class Voice : ManagedPreferenceCategory(R.string.setting_ime_input, sharedPreferences) {
-        val voiceInputEnabled = switch(R.string.voice_input_enabled, "voice_input_enabled", true, R.string.voice_input_enabled_tips)
-        val voiceInputAutoCommit = switch(R.string.voice_input_auto_commit, "voice_input_auto_commit", true, R.string.voice_input_auto_commit_tips)
-        val voiceInputShowPartial = switch(R.string.voice_input_show_partial, "voice_input_show_partial", false, R.string.voice_input_show_partial_tips)
-        val voiceInputLanguage = list(
-            R.string.voice_input_language,
-            "voice_input_language",
-            VoiceLanguageMode.BILINGUAL,
-            VoiceLanguageMode,
-            listOf(
-                VoiceLanguageMode.BILINGUAL,
-                VoiceLanguageMode.CHINESE_ONLY,
-                VoiceLanguageMode.ENGLISH_ONLY
-            ),
-            listOf(
-                R.string.voice_language_bilingual,
-                R.string.voice_language_chinese_only,
-                R.string.voice_language_english_only
-            )
-        )
-    }
-
     inner class Other : ManagedPreferenceCategory(R.string.setting_ime_other, sharedPreferences) {
         val imeHideIcon = switch(R.string.ime_hide_icon, "ime_hide_icon_enable", false, R.string.ime_hide_icon_tips)
     }
@@ -349,7 +326,6 @@ class AppPrefs(private val sharedPreferences: SharedPreferences) {
 
 
     val internal = Internal().register()
-    val voice = Voice().register()
     val handwriting = Handwriting().register()
     val input = Input().register()
     val clipboard = Clipboard().register()
@@ -374,9 +350,6 @@ class AppPrefs(private val sharedPreferences: SharedPreferences) {
             }
 
             input.managedPreferences.forEach {
-                it.value.putValueTo(this@edit)
-            }
-            voice.managedPreferences.forEach {
                 it.value.putValueTo(this@edit)
             }
             handwriting.managedPreferences.forEach {

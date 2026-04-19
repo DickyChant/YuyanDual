@@ -11,7 +11,6 @@ import com.yuyan.inputmethod.core.Rime
 import com.yuyan.inputmethod.data.InputKey
 import com.yuyan.inputmethod.data.KeyRecordStack
 import com.yuyan.inputmethod.util.DoublePinYinUtils
-import com.yuyan.imemodule.utils.AgentDebugLog
 import com.yuyan.imemodule.utils.KeyEventUnicodeCompat
 import com.yuyan.inputmethod.util.LX17PinYinUtils
 import com.yuyan.inputmethod.util.QwertyPinYinUtils
@@ -48,27 +47,12 @@ object RimeEngine {
 
     fun onNormalKey(event: KeyEvent) {
         val keyCode = event.keyCode
-        val directUnicode = event.unicodeChar
         val keyChar = if (keyCode == KeyEvent.KEYCODE_APOSTROPHE) {
             if (isFinish()) '/'.code else '\''.code
         } else {
             KeyEventUnicodeCompat.resolveUnicodeChar(event)
         }
-        // #region agent log
-        if (keyCode in KeyEvent.KEYCODE_A..KeyEvent.KEYCODE_Z && directUnicode == 0 && keyChar != 0) {
-            AgentDebugLog.line(
-                "C",
-                "RimeEngine.onNormalKey",
-                "unicode fallback used",
-                mapOf("keyCode" to keyCode, "directUnicode" to directUnicode, "resolved" to keyChar)
-            )
-        }
-        // #endregion
-        // Rime 的第二个参数是 GDK 风格的修饰符掩码 (ShiftMask=1, …)，不是 Android 的 action。
-        // 软键盘点击合成的 KeyEvent 是 ACTION_UP(=1)，直接传下去会被 Rime 当成 Shift 按下，
-        // 导致拼音 schema 拒绝字母输入。这里按 metaState 推导真实掩码即可。
-        val rimeMask = if (event.metaState and (KeyEvent.META_SHIFT_ON or KeyEvent.META_CAPS_LOCK_ON) != 0) 1 else 0
-        if (keyRecordStack.pushKey(event)) Rime.processKey(keyChar, rimeMask)
+        if (keyRecordStack.pushKey(event)) Rime.processKey(keyChar, event.action)
         updateCandidatesOrCommitText()
     }
 
